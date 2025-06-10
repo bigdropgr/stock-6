@@ -1,0 +1,98 @@
+<?php
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_name(SESSION_NAME);
+    session_start();
+}
+
+// Check if user is logged in
+$auth = new Auth();
+$is_logged_in = $auth->isLoggedIn();
+$current_user = $is_logged_in ? $auth->getCurrentUser() : null;
+
+// Get current page
+$current_page = basename($_SERVER['PHP_SELF']);
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo SITE_NAME; ?></title>
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <?php if ($is_logged_in): ?>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="index.php"><?php echo SITE_NAME; ?></a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo ($current_page === 'index.php' || $current_page === 'dashboard.php') ? 'active' : ''; ?>" href="/dashboard.php">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo ($current_page === 'search.php') ? 'active' : ''; ?>" href="/search.php">
+                            <i class="fas fa-search"></i> Search
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo ($current_page === 'sync.php') ? 'active' : ''; ?>" href="/sync.php">
+                            <i class="fas fa-sync"></i> Sync
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user"></i> <?php echo htmlspecialchars($current_user->name); ?>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/profile.php"><i class="fas fa-id-card"></i> Profile</a></li>
+                            <li><a class="dropdown-item" href="/change-password.php"><i class="fas fa-key"></i> Change Password</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <?php endif; ?>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <?php
+        // Display flash messages if any
+        $flash_message = get_flash_message();
+        if ($flash_message) {
+            $alert_class = 'alert-info';
+            
+            if ($flash_message['type'] === 'success') {
+                $alert_class = 'alert-success';
+            } elseif ($flash_message['type'] === 'danger' || $flash_message['type'] === 'error') {
+                $alert_class = 'alert-danger';
+            } elseif ($flash_message['type'] === 'warning') {
+                $alert_class = 'alert-warning';
+            }
+            
+            echo '<div class="alert ' . $alert_class . ' alert-dismissible fade show" role="alert">';
+            echo $flash_message['message'];
+            echo '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+            echo '</div>';
+        }
+        ?>

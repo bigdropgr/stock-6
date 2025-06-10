@@ -1,0 +1,213 @@
+/**
+ * Custom styles for the Physical Store Inventory System
+ */
+
+/* General Styles */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.footer {
+    margin-top: auto;
+}
+
+/* Login Page */
+.login-container {
+    max-width: 400px;
+    margin: 100px auto;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Dashboard */
+.dashboard-card {
+    transition: transform 0.3s ease;
+    height: 100%;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-counter {
+    padding: 20px 10px;
+    border-radius: 5px;
+    color: #fff;
+}
+
+.card-counter i {
+    font-size: 4em;
+    opacity: 0.4;
+}
+
+.card-counter .count-numbers {
+    position: absolute;
+    right: 35px;
+    top: 20px;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.card-counter .count-name {
+    position: absolute;
+    right: 35px;
+    top: 65px;
+    font-style: italic;
+    text-transform: capitalize;
+    opacity: 0.7;
+}
+
+.bg-primary-light {
+    background-color: #cfe2ff;
+}
+
+.bg-success-light {
+    background-color: #d1e7dd;
+}
+
+.bg-warning-light {
+    background-color: #fff3cd;
+}
+
+.bg-danger-light {
+    background-color: #f8d7da;
+}
+
+/* Product Cards */
+.product-card {
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.product-card:hover {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.product-card .card-img-top {
+    height: 200px;
+    object-fit: contain;
+    padding: 10px;
+}
+
+.product-sku {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.product-price {
+    font-weight: bold;
+    color: #28a745;
+}
+
+.product-stock {
+    font-weight: bold;
+}
+
+.stock-high {
+    color: #28a745;
+}
+
+.stock-medium {
+    color: #fd7e14;
+}
+
+.stock-low {
+    color: #dc3545;
+}
+
+/* Search Page */
+.search-box {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+/* Product Edit */
+.product-image-preview {
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+    margin-bottom: 15px;
+}
+
+/* Sync Page */
+.sync-logs {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.sync-status-success {
+    color: #28a745;
+}
+
+.sync-status-error {
+    color: #dc3545;
+}
+
+/* Responsive Tables */
+.table-responsive {
+    overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+    .product-card .card-img-top {
+        height: 150px;
+    }
+    
+    .dashboard-card {
+        margin-bottom: 20px;
+    }
+}
+
+
+/* Additional styles for the variations table */
+.variation-stock {
+    width: 80px;
+}
+
+.table .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.table td input.form-control-sm {
+    height: calc(1.5em + 0.5rem + 2px);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    border-radius: 0.2rem;
+}
+
+/* Add this to your existing CSS file */
+.stock-high {
+    color: #28a745;
+}
+
+.stock-medium {
+    color: #fd7e14;
+}
+
+.stock-low {
+    color: #dc3545;
+}
+
+/* Make sure mobile view for variations table works well */
+@media (max-width: 768px) {
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    .table td, .table th {
+        white-space: nowrap;
+    }
+    
+    .btn-sm {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.7rem;
+    }
+}
