@@ -2,10 +2,9 @@
 /**
  * Search Page
  * 
- * Allows searching for products in physical inventory
+ * Updated with location search and wholesale price display
  */
 
-// Include required files
 require_once 'config/config.php';
 require_once 'config/database.php';
 require_once 'includes/Database.php';
@@ -14,12 +13,10 @@ require_once 'includes/Product.php';
 require_once 'includes/Sync.php';
 require_once 'includes/functions.php';
 
-// Initialize classes
 $auth = new Auth();
 $product = new Product();
 $sync = new Sync();
 
-// Require authentication
 $auth->requireAuth();
 
 // Get search parameters
@@ -34,12 +31,10 @@ $total_results = 0;
 $total_pages = 1;
 
 if (!empty($search_term)) {
-    // Debug search
     error_log("Performing search for term: " . $search_term);
     $results = $product->search($search_term, $per_page);
     error_log("Search returned " . count($results) . " results");
 } elseif ($filter === 'low_stock') {
-    // Get all low stock products, not just the first few
     $sql = "SELECT * FROM physical_inventory WHERE is_low_stock = 1 AND stock > 0 ORDER BY stock ASC";
     $db = Database::getInstance();
     $query_result = $db->query($sql);
@@ -57,10 +52,8 @@ if (!empty($search_term)) {
     $total_pages = ceil($total_results / $per_page);
 }
 
-// Get last sync
 $last_sync = $sync->getLastSync();
 
-// Include header
 include 'templates/header.php';
 ?>
 
@@ -78,11 +71,14 @@ include 'templates/header.php';
             <div class="row g-2 align-items-center">
                 <div class="col-md-8">
                     <div class="input-group">
-                        <input type="text" id="search-input" name="term" class="form-control form-control-lg" placeholder="Search by product name or SKU..." value="<?php echo htmlspecialchars($search_term); ?>">
+                        <input type="text" id="search-input" name="term" class="form-control form-control-lg" 
+                               placeholder="Search by product name, SKU, aisle, or shelf..." 
+                               value="<?php echo safe_htmlspecialchars($search_term); ?>">
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fas fa-search"></i> Search
                         </button>
                     </div>
+                    <div class="form-text">You can search by product name, SKU, aisle location, or shelf position.</div>
                 </div>
                 <div class="col-md-4">
                     <div class="d-flex justify-content-md-end mt-2 mt-md-0">
@@ -105,7 +101,7 @@ include 'templates/header.php';
         <h6 class="m-0 font-weight-bold text-primary">
             <?php
             if (!empty($search_term)) {
-                echo 'Search Results for "' . htmlspecialchars($search_term) . '"';
+                echo 'Search Results for "' . safe_htmlspecialchars($search_term) . '"';
             } elseif ($filter === 'low_stock') {
                 echo 'Products Low in Stock';
             } else {
@@ -127,7 +123,7 @@ include 'templates/header.php';
             <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
                 <div class="card h-100 product-card">
                     <?php if (!empty($item->image_url)): ?>
-                    <img src="<?php echo $item->image_url; ?>" class="card-img-top" alt="<?php echo htmlspecialchars($item->title); ?>">
+                    <img src="<?php echo $item->image_url; ?>" class="card-img-top" alt="<?php echo safe_htmlspecialchars($item->title); ?>">
                     <?php else: ?>
                     <div class="text-center p-4 bg-light card-img-top">
                         <i class="fas fa-box fa-4x text-muted"></i>
@@ -135,12 +131,36 @@ include 'templates/header.php';
                     <?php endif; ?>
                     
                     <div class="card-body">
-                        <h5 class="card-title" title="<?php echo htmlspecialchars($item->title); ?>">
+                        <h5 class="card-title" title="<?php echo safe_htmlspecialchars($item->title); ?>">
                             <?php echo truncate($item->title, 40); ?>
                         </h5>
-                        <p class="product-sku mb-1">SKU: <?php echo $item->sku; ?></p>
-                        <p class="mb-1">Category: <?php echo $item->category ?: 'N/A'; ?></p>
-                        <p class="product-price mb-1">Price: <?php echo format_price($item->price); ?></p>
+                        <p class="product-sku mb-1">SKU: <?php echo safe_htmlspecialchars($item->sku ?? ''); ?></p>
+                        <p class="mb-1">Category: <?php echo safe_htmlspecialchars($item->category ?: 'N/A'); ?></p>
+                        
+                        <!-- Pricing Information -->
+                        <div class="mb-2">
+                            <p class="product-price mb-1">Retail: <?php echo format_price($item->price); ?></p>
+                            <?php if (isset($item->wholesale_price) && $item->wholesale_price > 0): ?>
+                            <p class="mb-1"><small class="text-muted">Wholesale: <?php echo format_price($item->wholesale_price); ?></small></p>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <!-- Location Information -->
+                        <?php if (!empty($item->aisle) || !empty($item->shelf)): ?>
+                        <div class="mb-2">
+                            <p class="mb-1">
+                                <small class="text-info">
+                                    <i class="fas fa-map-marker-alt"></i> 
+                                    <?php 
+                                    $location_parts = [];
+                                    if (!empty($item->aisle)) $location_parts[] = "Aisle " . $item->aisle;
+                                    if (!empty($item->shelf)) $location_parts[] = "Shelf " . $item->shelf;
+                                    echo implode(', ', $location_parts);
+                                    ?>
+                                </small>
+                            </p>
+                        </div>
+                        <?php endif; ?>
                         
                         <?php
                         $stock_class = 'stock-high';
@@ -156,10 +176,10 @@ include 'templates/header.php';
                         </p>
                         
                         <div class="d-flex justify-content-between">
-                            <button type="button" class="btn btn-outline-primary quick-stock-update" data-product-id="<?php echo $item->id; ?>">
-                                <i class="fas fa-edit"></i> Update Stock
+                            <button type="button" class="btn btn-outline-primary btn-sm quick-stock-update" data-product-id="<?php echo $item->id; ?>">
+                                <i class="fas fa-edit"></i> Stock
                             </button>
-                            <a href="product.php?id=<?php echo $item->id; ?>" class="btn btn-primary">
+                            <a href="product.php?id=<?php echo $item->id; ?>" class="btn btn-primary btn-sm">
                                 <i class="fas fa-edit"></i> Edit
                             </a>
                         </div>
@@ -204,6 +224,5 @@ include 'templates/header.php';
 </div>
 
 <?php
-// Include footer
 include 'templates/footer.php';
 ?>

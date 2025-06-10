@@ -2,7 +2,7 @@
 /**
  * Product Edit Page
  * 
- * Allows editing a product in the physical inventory with proper variable product support
+ * Updated with wholesale price and location fields
  */
 
 require_once 'config/config.php';
@@ -29,13 +29,25 @@ if (!$product_data) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stock = isset($_POST['stock']) ? intval($_POST['stock']) : 0;
+    $wholesale_price = isset($_POST['wholesale_price']) ? floatval($_POST['wholesale_price']) : 0.0;
     $low_stock_threshold = isset($_POST['low_stock_threshold']) ? intval($_POST['low_stock_threshold']) : DEFAULT_LOW_STOCK_THRESHOLD;
     $notes = isset($_POST['notes']) ? $_POST['notes'] : '';
     
+    // Location fields
+    $aisle = isset($_POST['aisle']) ? $_POST['aisle'] : '';
+    $shelf = isset($_POST['shelf']) ? $_POST['shelf'] : '';
+    $storage_notes = isset($_POST['storage_notes']) ? $_POST['storage_notes'] : '';
+    $date_of_entry = isset($_POST['date_of_entry']) && !empty($_POST['date_of_entry']) ? $_POST['date_of_entry'] : null;
+    
     $update_data = [
         'stock' => $stock,
+        'wholesale_price' => $wholesale_price,
         'low_stock_threshold' => $low_stock_threshold,
-        'notes' => $notes
+        'notes' => $notes,
+        'aisle' => $aisle,
+        'shelf' => $shelf,
+        'storage_notes' => $storage_notes,
+        'date_of_entry' => $date_of_entry
     ];
     
     if ($product->update($id, $update_data)) {
@@ -82,21 +94,21 @@ include 'templates/header.php';
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="title" class="form-label">Product Title</label>
-                            <input type="text" class="form-control" id="title" value="<?php echo htmlspecialchars($product_data->title); ?>" readonly>
+                            <input type="text" class="form-control" id="title" value="<?php echo htmlspecialchars($product_data->title ?? ''); ?>" readonly>
                         </div>
                         <div class="col-md-6">
                             <label for="sku" class="form-label">SKU</label>
-                            <input type="text" class="form-control" id="sku" value="<?php echo $product_data->sku; ?>" readonly>
+                            <input type="text" class="form-control" id="sku" value="<?php echo htmlspecialchars($product_data->sku ?? ''); ?>" readonly>
                         </div>
                     </div>
                     
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="category" class="form-label">Category</label>
-                            <input type="text" class="form-control" id="category" value="<?php echo htmlspecialchars($product_data->category); ?>" readonly>
+                            <input type="text" class="form-control" id="category" value="<?php echo htmlspecialchars($product_data->category ?? ''); ?>" readonly>
                         </div>
                         <div class="col-md-6">
-                            <label for="price" class="form-label">Price</label>
+                            <label for="price" class="form-label">Retail Price</label>
                             <div class="input-group">
                                 <span class="input-group-text">€</span>
                                 <input type="text" class="form-control" id="price" value="<?php echo number_format($product_data->price, 2); ?>" readonly>
@@ -112,6 +124,17 @@ include 'templates/header.php';
                             <div class="form-text">Current physical inventory stock.</div>
                         </div>
                         <div class="col-md-6">
+                            <label for="wholesale_price" class="form-label">Wholesale Price</label>
+                            <div class="input-group">
+                                <span class="input-group-text">€</span>
+                                <input type="number" class="form-control" id="wholesale_price" name="wholesale_price" value="<?php echo number_format($product_data->wholesale_price ?? 0, 2); ?>" min="0" step="0.01">
+                            </div>
+                            <div class="form-text">Cost price for this product.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
                             <label for="low_stock_threshold" class="form-label">Low Stock Threshold</label>
                             <input type="number" class="form-control" id="low_stock_threshold" name="low_stock_threshold" value="<?php echo $product_data->low_stock_threshold; ?>" min="1" required>
                             <div class="form-text">Products with stock below this will be marked as low stock.</div>
@@ -121,7 +144,7 @@ include 'templates/header.php';
                     
                     <div class="mb-3">
                         <label for="notes" class="form-label">Notes</label>
-                        <textarea class="form-control" id="notes" name="notes" rows="3"><?php echo htmlspecialchars($product_data->notes); ?></textarea>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"><?php echo htmlspecialchars($product_data->notes ?? ''); ?></textarea>
                         <div class="form-text">Add any notes about this product's inventory.</div>
                     </div>
                     
@@ -135,6 +158,55 @@ include 'templates/header.php';
                         <button type="submit" class="btn btn-primary btn-lg">Update Product</button>
                     </div>
                     <?php endif; ?>
+                </form>
+            </div>
+        </div>
+
+        <!-- Location in Physical Store Section -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="fas fa-map-marker-alt"></i> Location in Physical Store
+                </h6>
+            </div>
+            <div class="card-body">
+                <form action="" method="post">
+                    <!-- Hidden fields to preserve other data when submitting location updates -->
+                    <?php if (!$product->isVariableProduct($product_data)): ?>
+                    <input type="hidden" name="stock" value="<?php echo $product_data->stock; ?>">
+                    <input type="hidden" name="wholesale_price" value="<?php echo $product_data->wholesale_price ?? 0; ?>">
+                    <input type="hidden" name="low_stock_threshold" value="<?php echo $product_data->low_stock_threshold; ?>">
+                    <input type="hidden" name="notes" value="<?php echo htmlspecialchars($product_data->notes ?? ''); ?>">
+                    <?php endif; ?>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="aisle" class="form-label">Aisle</label>
+                            <input type="text" class="form-control" id="aisle" name="aisle" value="<?php echo htmlspecialchars($product_data->aisle ?? ''); ?>" placeholder="e.g., A1, B2, Main">
+                            <div class="form-text">Which aisle or section is this product located in?</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="shelf" class="form-label">Shelf</label>
+                            <input type="text" class="form-control" id="shelf" name="shelf" value="<?php echo htmlspecialchars($product_data->shelf ?? ''); ?>" placeholder="e.g., Top, Middle, 3rd">
+                            <div class="form-text">Which shelf level or position?</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="storage_notes" class="form-label">Storage Notes</label>
+                        <textarea class="form-control" id="storage_notes" name="storage_notes" rows="3" placeholder="Additional storage or location notes..."><?php echo htmlspecialchars($product_data->storage_notes ?? ''); ?></textarea>
+                        <div class="form-text">Any additional notes about storage requirements or location details.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="date_of_entry" class="form-label">Date of Entry</label>
+                        <input type="date" class="form-control" id="date_of_entry" name="date_of_entry" value="<?php echo $product_data->date_of_entry ?? ''; ?>">
+                        <div class="form-text">When was this product first received/entered into inventory?</div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success">Update Location Information</button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -162,7 +234,8 @@ include 'templates/header.php';
                                 <tr>
                                     <th>Variation</th>
                                     <th>SKU</th>
-                                    <th>Price</th>
+                                    <th>Retail Price</th>
+                                    <th>Wholesale Price</th>
                                     <th>Stock</th>
                                     <th>Actions</th>
                                 </tr>
@@ -176,8 +249,9 @@ include 'templates/header.php';
                                         <small class="text-muted"><?php echo htmlspecialchars($variation->notes); ?></small>
                                         <?php endif; ?>
                                     </td>
-                                    <td><?php echo $variation->sku; ?></td>
+                                    <td><?php echo htmlspecialchars($variation->sku ?? ''); ?></td>
                                     <td><?php echo format_price($variation->price); ?></td>
+                                    <td><?php echo format_price($variation->wholesale_price ?? 0); ?></td>
                                     <td>
                                         <div class="input-group input-group-sm" style="width: 120px;">
                                             <input type="number" class="form-control variation-stock" 
@@ -293,6 +367,34 @@ include 'templates/header.php';
                 </div>
             </div>
         </div>
+
+        <!-- Location Summary -->
+        <?php if ($product_data->aisle || $product_data->shelf || $product_data->storage_notes): ?>
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="fas fa-map-marker-alt"></i> Current Location
+                </h6>
+            </div>
+            <div class="card-body">
+                <?php if ($product_data->aisle): ?>
+                <p><strong>Aisle:</strong> <?php echo htmlspecialchars($product_data->aisle); ?></p>
+                <?php endif; ?>
+                
+                <?php if ($product_data->shelf): ?>
+                <p><strong>Shelf:</strong> <?php echo htmlspecialchars($product_data->shelf); ?></p>
+                <?php endif; ?>
+                
+                <?php if ($product_data->storage_notes): ?>
+                <p><strong>Storage Notes:</strong><br><?php echo nl2br(htmlspecialchars($product_data->storage_notes)); ?></p>
+                <?php endif; ?>
+                
+                <?php if ($product_data->date_of_entry): ?>
+                <p><strong>Entry Date:</strong> <?php echo format_date($product_data->date_of_entry); ?></p>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
 </div>
 

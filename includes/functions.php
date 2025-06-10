@@ -2,37 +2,38 @@
 /**
  * Helper Functions
  * 
- * Common utility functions for the application
+ * Updated to fix deprecated warnings and improve safety
  */
 
 /**
  * Format a price as currency
- * 
- * @param float $price
- * @return string
  */
 function format_price($price) {
-    return '€' . number_format($price, 2, '.', ',');
+    // Handle null/empty values
+    if ($price === null || $price === '') {
+        $price = 0;
+    }
+    return '€' . number_format((float)$price, 2, '.', ',');
 }
 
 /**
  * Format a date
- * 
- * @param string $date
- * @param string $format
- * @return string
  */
 function format_date($date, $format = 'd/m/Y H:i') {
+    if (empty($date) || $date === '0000-00-00 00:00:00') {
+        return 'Never';
+    }
     return date($format, strtotime($date));
 }
 
 /**
  * Get a time-ago string from a date
- * 
- * @param string $date
- * @return string
  */
 function time_ago($date) {
+    if (empty($date) || $date === '0000-00-00 00:00:00') {
+        return 'Never';
+    }
+    
     $timestamp = strtotime($date);
     $strTime = ['second', 'minute', 'hour', 'day', 'month', 'year'];
     $length = ['60', '60', '24', '30', '12', '10'];
@@ -58,9 +59,6 @@ function time_ago($date) {
 
 /**
  * Display a flash message
- * 
- * @param string $type
- * @param string $message
  */
 function set_flash_message($type, $message) {
     $_SESSION['flash_message'] = [
@@ -71,8 +69,6 @@ function set_flash_message($type, $message) {
 
 /**
  * Get and clear flash message
- * 
- * @return array|null
  */
 function get_flash_message() {
     if (isset($_SESSION['flash_message'])) {
@@ -85,20 +81,27 @@ function get_flash_message() {
 }
 
 /**
- * Sanitize input
- * 
- * @param string $input
- * @return string
+ * Sanitize input - handles null values properly
  */
 function sanitize($input) {
+    if ($input === null) {
+        return '';
+    }
     return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
 }
 
 /**
+ * Safe htmlspecialchars that handles null values
+ */
+function safe_htmlspecialchars($string) {
+    if ($string === null || $string === '') {
+        return '';
+    }
+    return htmlspecialchars($string, ENT_QUOTES, 'UTF-8');
+}
+
+/**
  * Redirect to a URL
- * 
- * @param string $url
- * @param int $status
  */
 function redirect($url, $status = 302) {
     // Make sure URL starts with a slash for absolute path if it's not a full URL
@@ -112,7 +115,6 @@ function redirect($url, $status = 302) {
     }
     
     // Handle URLs that might be malformed with double slashes
-    // This can happen if code combines paths incorrectly
     $url = preg_replace('#([^:])//+#', '$1/', $url);
     
     header('Location: ' . $url, true, $status);
@@ -121,8 +123,6 @@ function redirect($url, $status = 302) {
 
 /**
  * Check if a request is AJAX
- * 
- * @return bool
  */
 function is_ajax() {
     return isset($_SERVER['HTTP_X_REQUESTED_WITH']) && 
@@ -131,9 +131,6 @@ function is_ajax() {
 
 /**
  * Return JSON response
- * 
- * @param array $data
- * @param int $status
  */
 function json_response($data, $status = 200) {
     http_response_code($status);
@@ -144,9 +141,6 @@ function json_response($data, $status = 200) {
 
 /**
  * Generate a random string
- * 
- * @param int $length
- * @return string
  */
 function random_string($length = 10) {
     $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -161,8 +155,6 @@ function random_string($length = 10) {
 
 /**
  * Get the base URL of the application
- * 
- * @return string
  */
 function base_url() {
     return SITE_URL;
@@ -170,8 +162,6 @@ function base_url() {
 
 /**
  * Get the current URL
- * 
- * @return string
  */
 function current_url() {
     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
@@ -180,11 +170,6 @@ function current_url() {
 
 /**
  * Create pagination links
- * 
- * @param int $current_page
- * @param int $total_pages
- * @param string $url_pattern
- * @return string
  */
 function pagination($current_page, $total_pages, $url_pattern = '?page=%d') {
     if ($total_pages <= 1) {
@@ -225,9 +210,6 @@ function pagination($current_page, $total_pages, $url_pattern = '?page=%d') {
 
 /**
  * Debug function to print variables
- * 
- * @param mixed $var
- * @param bool $exit
  */
 function debug($var, $exit = true) {
     echo '<pre>';
@@ -241,9 +223,6 @@ function debug($var, $exit = true) {
 
 /**
  * Log error to file
- * 
- * @param string $message
- * @param string $level
  */
 function log_error($message, $level = 'ERROR') {
     $log_file = __DIR__ . '/../logs/app.log';
@@ -261,22 +240,19 @@ function log_error($message, $level = 'ERROR') {
 
 /**
  * Check if running in CLI mode
- * 
- * @return bool
  */
 function is_cli() {
     return php_sapi_name() === 'cli';
 }
 
 /**
- * Truncate a string to a specified length
- * 
- * @param string $string
- * @param int $length
- * @param string $append
- * @return string
+ * Truncate a string to a specified length - handles null values
  */
 function truncate($string, $length = 100, $append = '...') {
+    if ($string === null || $string === '') {
+        return '';
+    }
+    
     if (strlen($string) > $length) {
         $string = substr($string, 0, $length) . $append;
     }
