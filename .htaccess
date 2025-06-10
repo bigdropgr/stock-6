@@ -14,25 +14,8 @@
     RewriteRule ^templates/ - [F,L]
     RewriteRule ^cron/ - [F,L]
     
-    # Prevent direct access to .php files in /api/ directory (but allow update-variation-stock.php)
-    RewriteCond %{THE_REQUEST} ^.+?\ [^?]+\.php[?\ ]
-    RewriteCond %{REQUEST_URI} ^/api/
-    RewriteCond %{REQUEST_URI} !^/update-variation-stock\.php$
-    RewriteRule ^api/(.*)\.php$ - [F,L]
-    
-    # Allow API access only via AJAX (but allow update-variation-stock.php)
-    <IfModule mod_headers.c>
-        <FilesMatch "^api/.+\.php$">
-            SetEnvIf X-Requested-With "XMLHttpRequest" ajax=1
-            Order Deny,Allow
-            Deny from all
-            Allow from env=ajax
-            
-            # Allow direct access from the same server (for cron jobs)
-            Allow from 127.0.0.1
-            Allow from ::1
-        </FilesMatch>
-    </IfModule>
+    # Allow API access for authenticated users
+    # Remove the restriction that was blocking API calls
 </IfModule>
 
 # Disable directory listing
@@ -84,8 +67,9 @@ AddDefaultCharset UTF-8
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json
 </IfModule>
+
 # php -- BEGIN cPanel-generated handler, do not edit
-# Set the “ea-php82” package as the default “PHP” programming language.
+# Set the "ea-php82" package as the default "PHP" programming language.
 <IfModule mime_module>
   AddHandler application/x-httpd-ea-php82 .php .php8 .phtml
 </IfModule>

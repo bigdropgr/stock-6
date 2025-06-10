@@ -68,24 +68,35 @@ $(document).ready(function() {
         $('#search-results').html(html);
     }
     
-    // Quick stock update
+    // Quick stock update - IMPROVED VERSION
     $('.quick-stock-update').on('click', function(e) {
         e.preventDefault();
         
         var productId = $(this).data('product-id');
-        var currentStock = parseInt($('#current-stock-' + productId).text());
+        var currentStock = parseInt($('#current-stock-' + productId).text()) || 0;
         
         $('#quick-stock-product-id').val(productId);
         $('#quick-stock-value').val(currentStock);
         $('#quickStockModal').modal('show');
     });
     
-    // Stock update form
+    // Stock update form - IMPROVED VERSION
     $('#quick-stock-form').on('submit', function(e) {
         e.preventDefault();
         
         var productId = $('#quick-stock-product-id').val();
         var newStock = $('#quick-stock-value').val();
+        
+        // Validate input
+        if (!newStock || isNaN(newStock) || parseInt(newStock) < 0) {
+            showAlert('Please enter a valid stock quantity (0 or greater)', 'danger');
+            return;
+        }
+        
+        // Disable submit button and show loading
+        var $submitBtn = $('#quick-stock-form button[type="submit"]');
+        var originalText = $submitBtn.html();
+        $submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Updating...');
         
         $.ajax({
             url: 'api/products.php',
@@ -93,10 +104,14 @@ $(document).ready(function() {
             data: {
                 action: 'update_stock',
                 product_id: productId,
-                stock: newStock
+                stock: parseInt(newStock)
             },
             dataType: 'json',
+            timeout: 15000, // 15 second timeout
             success: function(response) {
+                // Restore button
+                $submitBtn.prop('disabled', false).html(originalText);
+                
                 if (response.success) {
                     $('#quickStockModal').modal('hide');
                     showAlert('Stock updated successfully', 'success');
@@ -107,23 +122,75 @@ $(document).ready(function() {
                     
                     // Update stock class
                     stockElement.removeClass('stock-high stock-medium stock-low');
-                    if (newStock <= 5) {
+                    var stock = parseInt(newStock);
+                    if (stock <= 5) {
                         stockElement.addClass('stock-low');
-                    } else if (newStock <= 10) {
+                    } else if (stock <= 10) {
                         stockElement.addClass('stock-medium');
                     } else {
                         stockElement.addClass('stock-high');
                     }
                 } else {
-                    showAlert('Error updating stock: ' + response.message, 'danger');
+                    showAlert('Error updating stock: ' + (response.message || 'Unknown error'), 'danger');
                 }
             },
             error: function(xhr, status, error) {
-                showAlert('Error updating stock. Please try again.', 'danger');
-                console.error(error);
+                // Restore button
+                $submitBtn.prop('disabled', false).html(originalText);
+                
+                var errorMessage = 'Error updating stock. Please try again.';
+                
+                if (xhr.status === 401) {
+                    errorMessage = 'Session expired. Please refresh the page and try again.';
+                } else if (xhr.status === 403) {
+                    errorMessage = 'Access denied. Please check your permissions.';
+                } else if (xhr.status === 500) {
+                    errorMessage = 'Server error. Please try again later.';
+                } else if (status === 'timeout') {
+                    errorMessage = 'Request timed out. Please try again.';
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                
+                showAlert(errorMessage, 'danger');
+                
+                // Log detailed error for debugging
+                console.error('AJAX Error Details:', {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    responseText: xhr.responseText,
+                    error: error,
+                    productId: productId,
+                    stock: newStock
+                });
             }
         });
     });
+    
+    // Improved show alert function
+    function showAlert(message, type) {
+        // Remove any existing alerts
+        $('#alert-container .alert').remove();
+        
+        var alertHtml = '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">';
+        alertHtml += message;
+        alertHtml += '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+        alertHtml += '</div>';
+        
+        $('#alert-container').html(alertHtml);
+        
+        // Auto-hide success messages after 5 seconds
+        if (type === 'success') {
+            setTimeout(function() {
+                $('#alert-container .alert').alert('close');
+            }, 5000);
+        }
+        
+        // Scroll to top to show the alert
+        $('html, body').animate({
+            scrollTop: $('#alert-container').offset().top - 100
+        }, 500);
+    }
     
     // Sync products
     $('#sync-products-btn').on('click', function(e) {
