@@ -101,23 +101,32 @@ function safe_htmlspecialchars($string) {
 }
 
 /**
- * Redirect to a URL
+ * Redirect to a URL - Fixed version
  */
 function redirect($url, $status = 302) {
-    // Make sure URL starts with a slash for absolute path if it's not a full URL
-    if (strpos($url, 'http') !== 0 && strpos($url, '/') !== 0) {
-        $url = '/' . $url;
+    // Prevent header injection
+    $url = str_replace(["\r", "\n"], '', $url);
+    
+    // If URL doesn't start with http, treat as relative
+    if (strpos($url, 'http') !== 0) {
+        // Remove leading slash to make it relative
+        if (strpos($url, '/') === 0) {
+            $url = substr($url, 1);
+        }
+        
+        // For specific pages, ensure no redirect loops
+        if ($url === 'index.php') {
+            $url = 'dashboard.php';
+        }
     }
     
-    // For URLs with just a slash, redirect to the domain root
-    if ($url === '/') {
-        $url = '/index.php';
+    // Clean any double redirects
+    if (headers_sent()) {
+        echo "<script>window.location.href='$url';</script>";
+        echo "<noscript><meta http-equiv='refresh' content='0;url=$url'></noscript>";
+    } else {
+        header('Location: ' . $url, true, $status);
     }
-    
-    // Handle URLs that might be malformed with double slashes
-    $url = preg_replace('#([^:])//+#', '$1/', $url);
-    
-    header('Location: ' . $url, true, $status);
     exit;
 }
 

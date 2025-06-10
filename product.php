@@ -12,6 +12,7 @@ require_once 'includes/Auth.php';
 require_once 'includes/Product.php';
 require_once 'includes/Sync.php';
 require_once 'includes/functions.php';
+require_once 'includes/i18n.php';
 
 $auth = new Auth();
 $product = new Product();

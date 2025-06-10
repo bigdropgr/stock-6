@@ -24,6 +24,7 @@ require_once 'includes/WooCommerce.php';
 require_once 'includes/Product.php';
 require_once 'includes/Sync.php'; // Include Sync.php last to avoid circular dependencies
 require_once 'includes/functions.php';
+require_once 'includes/i18n.php';
 
 // Initialize classes
 $auth = new Auth();

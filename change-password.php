@@ -11,6 +11,7 @@ require_once 'config/database.php';
 require_once 'includes/Database.php';
 require_once 'includes/Auth.php';
 require_once 'includes/functions.php';
+require_once 'includes/i18n.php';
 
 // Initialize authentication
 $auth = new Auth();

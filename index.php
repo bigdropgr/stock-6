@@ -2,7 +2,7 @@
 /**
  * Index Page
  * 
- * Redirects to dashboard or login page depending on authentication status
+ * Fixed redirect loop issue
  */
 
 // Include required files
@@ -12,12 +12,21 @@ require_once 'includes/Database.php';
 require_once 'includes/Auth.php';
 require_once 'includes/functions.php';
 
+// Include translation system if available
+if (file_exists('includes/i18n.php')) {
+    require_once 'includes/i18n.php';
+}
+
 // Initialize authentication
 $auth = new Auth();
 
-// Redirect to appropriate page
+// Check if user is logged in
 if ($auth->isLoggedIn()) {
-    redirect('dashboard.php');
+    // Redirect to dashboard without leading slash to avoid conflicts
+    header('Location: dashboard.php');
+    exit;
 } else {
-    redirect('login.php');
+    // Redirect to login page without leading slash
+    header('Location: login.php');
+    exit;
 }

@@ -1,7 +1,39 @@
 <?php
+// Include translation system first
+require_once __DIR__ . '/../includes/i18n.php';
+
+// Handle language switching BEFORE any output
+if (isset($_GET['lang']) && in_array($_GET['lang'], ['en', 'el'])) {
+    setLanguage($_GET['lang']);
+    
+    // Update user language preference in database if logged in
+    if (isset($auth) && $auth->isLoggedIn()) {
+        $current_user = $auth->getCurrentUser();
+        if ($current_user) {
+            $auth->updateLanguage($current_user->id, $_GET['lang']);
+        }
+    }
+    
+    // Create clean redirect URL (remove lang parameter)
+    $redirect_url = strtok($_SERVER["REQUEST_URI"], '?');
+    if (strpos($redirect_url, '/') === 0) {
+        $redirect_url = substr($redirect_url, 1); // Remove leading slash
+    }
+    
+    // Prevent redirect to debug page
+    if ($redirect_url === 'debug-session.php') {
+        $redirect_url = 'dashboard.php';
+    }
+    
+    header("Location: $redirect_url");
+    exit;
+}
+
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
-    session_name(SESSION_NAME);
+    if (defined('SESSION_NAME')) {
+        session_name(SESSION_NAME);
+    }
     session_start();
 }
 
@@ -14,7 +46,7 @@ $current_user = $is_logged_in ? $auth->getCurrentUser() : null;
 $current_page = basename($_SERVER['PHP_SELF']);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo getCurrentLanguage(); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,38 +66,58 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="index.php"><?php echo SITE_NAME; ?></a>
+            <a class="navbar-brand" href="dashboard.php"><?php echo SITE_NAME; ?></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link <?php echo ($current_page === 'index.php' || $current_page === 'dashboard.php') ? 'active' : ''; ?>" href="/dashboard.php">
-                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        <a class="nav-link <?php echo ($current_page === 'index.php' || $current_page === 'dashboard.php') ? 'active' : ''; ?>" href="dashboard.php">
+                            <i class="fas fa-tachometer-alt"></i> <?php echo __('dashboard'); ?>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?php echo ($current_page === 'search.php') ? 'active' : ''; ?>" href="/search.php">
-                            <i class="fas fa-search"></i> Search
+                        <a class="nav-link <?php echo ($current_page === 'search.php') ? 'active' : ''; ?>" href="search.php">
+                            <i class="fas fa-search"></i> <?php echo __('search'); ?>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?php echo ($current_page === 'sync.php') ? 'active' : ''; ?>" href="/sync.php">
-                            <i class="fas fa-sync"></i> Sync
+                        <a class="nav-link <?php echo ($current_page === 'sync.php') ? 'active' : ''; ?>" href="sync.php">
+                            <i class="fas fa-sync"></i> <?php echo __('sync'); ?>
                         </a>
                     </li>
                 </ul>
                 <ul class="navbar-nav">
+                    <!-- Language Switcher -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-globe"></i> 
+                            <?php 
+                            $current_lang = getCurrentLanguage();
+                            if ($current_lang === 'el') {
+                                echo 'ΕΛ';
+                            } else {
+                                echo 'EN';
+                            }
+                            ?>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="?lang=en">🇺🇸 <?php echo __('language_english'); ?></a></li>
+                            <li><a class="dropdown-item" href="?lang=el">🇬🇷 <?php echo __('language_greek'); ?></a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- User Menu -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user"></i> <?php echo htmlspecialchars($current_user->name); ?>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="/profile.php"><i class="fas fa-id-card"></i> Profile</a></li>
-                            <li><a class="dropdown-item" href="/change-password.php"><i class="fas fa-key"></i> Change Password</a></li>
+                            <li><a class="dropdown-item" href="profile.php"><i class="fas fa-id-card"></i> <?php echo __('profile'); ?></a></li>
+                            <li><a class="dropdown-item" href="change-password.php"><i class="fas fa-key"></i> <?php echo __('change_password'); ?></a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                            <li><a class="dropdown-item" href="logout.php"><i class="fas fa-sign-out-alt"></i> <?php echo __('logout'); ?></a></li>
                         </ul>
                     </li>
                 </ul>
