@@ -14,15 +14,32 @@ if (isset($_GET['lang']) && in_array($_GET['lang'], ['en', 'el'])) {
         }
     }
     
-    // Create clean redirect URL (remove lang parameter)
-    $redirect_url = strtok($_SERVER["REQUEST_URI"], '?');
-    if (strpos($redirect_url, '/') === 0) {
-        $redirect_url = substr($redirect_url, 1); // Remove leading slash
+    // Create clean redirect URL preserving ALL parameters except 'lang'
+    $current_url = $_SERVER['REQUEST_URI'];
+    $url_parts = parse_url($current_url);
+    $path = $url_parts['path'] ?? '';
+    
+    // Remove leading slash if present
+    if (strpos($path, '/') === 0) {
+        $path = substr($path, 1);
     }
     
     // Prevent redirect to debug page
-    if ($redirect_url === 'debug-session.php') {
-        $redirect_url = 'dashboard.php';
+    if ($path === 'debug-session.php') {
+        $path = 'dashboard.php';
+    }
+    
+    // Rebuild query string without 'lang' parameter
+    $query_params = [];
+    if (isset($url_parts['query'])) {
+        parse_str($url_parts['query'], $query_params);
+        unset($query_params['lang']); // Remove lang parameter
+    }
+    
+    // Build final redirect URL
+    $redirect_url = $path;
+    if (!empty($query_params)) {
+        $redirect_url .= '?' . http_build_query($query_params);
     }
     
     header("Location: $redirect_url");
@@ -44,6 +61,25 @@ $current_user = $is_logged_in ? $auth->getCurrentUser() : null;
 
 // Get current page
 $current_page = basename($_SERVER['PHP_SELF']);
+
+// Function to build language switch URLs preserving current parameters
+function buildLanguageSwitchUrl($lang) {
+    $current_url = $_SERVER['REQUEST_URI'];
+    $url_parts = parse_url($current_url);
+    
+    // Get current query parameters
+    $query_params = [];
+    if (isset($url_parts['query'])) {
+        parse_str($url_parts['query'], $query_params);
+    }
+    
+    // Add or update the lang parameter
+    $query_params['lang'] = $lang;
+    
+    // Build the URL
+    $path = $url_parts['path'] ?? '';
+    return $path . '?' . http_build_query($query_params);
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo getCurrentLanguage(); ?>">
@@ -103,8 +139,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
                             ?>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="?lang=en"><?php echo __('language_english'); ?></a></li>
-                            <li><a class="dropdown-item" href="?lang=el"><?php echo __('language_greek'); ?></a></li>
+                            <li><a class="dropdown-item" href="<?php echo buildLanguageSwitchUrl('en'); ?>"><?php echo __('language_english'); ?></a></li>
+                            <li><a class="dropdown-item" href="<?php echo buildLanguageSwitchUrl('el'); ?>"><?php echo __('language_greek'); ?></a></li>
                         </ul>
                     </li>
                     
