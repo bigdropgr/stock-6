@@ -1,11 +1,9 @@
 <?php
 /**
- * Login Page
- * 
- * Fixed redirect issues
+ * Login Page - Fixed Structure
  */
 
-// Include required files
+// Include required files FIRST
 require_once 'config/config.php';
 require_once 'config/database.php';
 require_once 'includes/Database.php';
@@ -26,7 +24,7 @@ if ($auth->isLoggedIn()) {
     exit;
 }
 
-// Process login form
+// MOVE ALL FORM PROCESSING TO THE TOP
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = isset($_POST['username']) ? $_POST['username'] : '';
@@ -46,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $redirect_to = substr($redirect_to, 1); // Remove leading slash
             }
             
+            // REDIRECT HAPPENS HERE - BEFORE ANY HTML
             header('Location: ' . $redirect_to);
             exit;
         } else {
@@ -54,8 +53,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Handle language switching BEFORE HTML
+if (isset($_GET['lang']) && in_array($_GET['lang'], ['en', 'el'])) {
+    if (function_exists('setLanguage')) {
+        setLanguage($_GET['lang']);
+    }
+    // Redirect to login page without language parameter
+    header('Location: login.php');
+    exit;
+}
+
 // Set page title
 $page_title = (function_exists('__') ? __('login') : 'Login') . ' - ' . SITE_NAME;
+
+// NOW START THE HTML OUTPUT
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo function_exists('getCurrentLanguage') ? getCurrentLanguage() : 'en'; ?>">
@@ -113,22 +124,14 @@ $page_title = (function_exists('__') ? __('login') : 'Login') . ' - ' . SITE_NAM
             <?php if (function_exists('getCurrentLanguage')): ?>
             <div class="text-center mt-4">
                 <div class="btn-group" role="group">
-                    <a href="?lang=en" class="btn btn-outline-secondary btn-sm <?php echo getCurrentLanguage() === 'en' ? 'active' : ''; ?>">🇺🇸 English</a>
-                    <a href="?lang=el" class="btn btn-outline-secondary btn-sm <?php echo getCurrentLanguage() === 'el' ? 'active' : ''; ?>">🇬🇷 Ελληνικά</a>
+                    <a href="?lang=en" class="btn btn-outline-secondary btn-sm <?php echo getCurrentLanguage() === 'en' ? 'active' : ''; ?>">
+                        EN English
+                    </a>
+                    <a href="?lang=el" class="btn btn-outline-secondary btn-sm <?php echo getCurrentLanguage() === 'el' ? 'active' : ''; ?>">
+                        EL Ελληνικά
+                    </a>
                 </div>
             </div>
-            
-            <?php
-            // Handle language switching on login page
-            if (isset($_GET['lang']) && in_array($_GET['lang'], ['en', 'el'])) {
-                if (function_exists('setLanguage')) {
-                    setLanguage($_GET['lang']);
-                }
-                // Redirect to login page without language parameter
-                header('Location: login.php');
-                exit;
-            }
-            ?>
             <?php endif; ?>
             
             <div class="text-center mt-4">

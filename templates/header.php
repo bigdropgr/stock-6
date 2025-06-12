@@ -96,15 +96,15 @@ $current_page = basename($_SERVER['PHP_SELF']);
                             <?php 
                             $current_lang = getCurrentLanguage();
                             if ($current_lang === 'el') {
-                                echo 'ΕΛ';
+                                echo 'GR';
                             } else {
                                 echo 'EN';
                             }
                             ?>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="?lang=en">🇺🇸 <?php echo __('language_english'); ?></a></li>
-                            <li><a class="dropdown-item" href="?lang=el">🇬🇷 <?php echo __('language_greek'); ?></a></li>
+                            <li><a class="dropdown-item" href="?lang=en"><?php echo __('language_english'); ?></a></li>
+                            <li><a class="dropdown-item" href="?lang=el"><?php echo __('language_greek'); ?></a></li>
                         </ul>
                     </li>
                     
@@ -117,7 +117,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
                             <li><a class="dropdown-item" href="profile.php"><i class="fas fa-id-card"></i> <?php echo __('profile'); ?></a></li>
                             <li><a class="dropdown-item" href="change-password.php"><i class="fas fa-key"></i> <?php echo __('change_password'); ?></a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="logout.php"><i class="fas fa-sign-out-alt"></i> <?php echo __('logout'); ?></a></li>
+                            <li>
+                                <a class="dropdown-item" href="logout.php">
+                                    <i class="fas fa-sign-out-alt"></i> <?php echo function_exists('__') ? __('logout') : 'Logout'; ?>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                 </ul>
